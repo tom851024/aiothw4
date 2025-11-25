@@ -24,6 +24,10 @@ try:
     
     # 設定環境變數
     os.environ['GROQ_API_KEY'] = groq_api_key
+    
+    # ⬇️ [關鍵修正] 必須明確設定這個環境變數，下面的 Embedding Class 才能讀取到 Token
+    os.environ['HuggingFaceHub_API_TOKEN'] = hf_token 
+    
     login(token=hf_token)
 except Exception as e:
     st.error("❌ 金鑰未設定！請確認 .streamlit/secrets.toml (本地) 或 Streamlit Cloud Secrets 設定正確。")
@@ -35,6 +39,12 @@ class EmbeddingGemmaEmbeddings(HuggingFaceEmbeddings):
         super().__init__(
             model_name="google/embeddinggemma-300m",
             encode_kwargs={"normalize_embeddings": True},
+            model_kwargs={
+                # ⬇️ [關鍵修正] 允許執行 Google 的自定義模型程式碼
+                "trust_remote_code": True, 
+                # ⬇️ [關鍵修正] 明確傳入 Token，解決雲端環境權限問題
+                "token": os.environ.get("HuggingFaceHub_API_TOKEN") 
+            },
             **kwargs
         )
 
@@ -45,8 +55,9 @@ class EmbeddingGemmaEmbeddings(HuggingFaceEmbeddings):
     def embed_query(self, text):
         return super().embed_query(f"task: search result | query: {text}")
 
-# --- 4. 載入資源 (加入進度提示) ---
-@st.cache_resource
+# --- 4. 載入資源 (UI 與邏輯分離版) ---
+# ⬇️ [關鍵修正] 使用 show_spinner 讓 Streamlit 自動處理載入動畫，避免 CacheReplayClosureError
+@st.cache_resource(show_spinner="🔄 系統初始化中，正在載入模型與資料庫 (初次執行需數分鐘)...")
 def load_resources():
     # 這裡面「只留 print」，把所有 st.info, st.empty 全部拿掉
     # 這樣就不會報 CacheReplayClosureError 了
@@ -63,7 +74,7 @@ def load_resources():
     print("⏳ Step 2: 正在讀取 FAISS 向量資料庫...")
     if not os.path.exists("faiss_db"):
         # 這裡改用 raise Exception，讓外層去抓錯誤，不要在快取內用 st.error
-        raise FileNotFoundError("❌ 找不到 faiss_db 資料夾！請確認已將資料夾放入專案目錄。")
+        raise FileNotFoundError("找不到 faiss_db 資料夾！請確認已將資料夾放入專案目錄。")
 
     vectorstore = FAISS.load_local(
         "faiss_db",
@@ -83,7 +94,11 @@ def load_resources():
     return retriever, client
 
 # 執行載入 (如果卡住，請看終端機)
-retriever, client = load_resources()
+try:
+    retriever, client = load_resources()
+except Exception as e:
+    st.error(f"❌ 系統載入失敗: {e}")
+    st.stop()
 
 # --- 5. 定義 Prompt 與生成邏輯 ---
 system_prompt = "你是資深的國際新聞編譯，專門負責將外電資訊整理成台灣讀者容易理解的報導。請保持客觀、專業、精簡的語氣，並使用台灣慣用的翻譯名詞（例如：雪梨而非悉尼、紐西蘭而非新西蘭），並用台灣慣用的中文回應。"
@@ -110,6 +125,7 @@ def chat_with_rag(user_input):
     final_prompt = prompt_template.format(retrieved_chunks=retrieved_chunks, question=user_input)
 
     # 3. 呼叫 LLM
+    # 若 Groq 有更新模型名稱，請在此調整
     model_name = "groq:llama-3.3-70b-versatile" 
     
     try:
@@ -128,18 +144,23 @@ def chat_with_rag(user_input):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# 顯示歷史訊息
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# 輸入框
 if prompt := st.chat_input("請輸入你想查詢的國際新聞..."):
+    # 顯示使用者訊息
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # 顯示 AI 回應
     with st.chat_message("assistant"):
         with st.spinner("🔍 正在檢索資料並撰寫報導..."):
             response = chat_with_rag(prompt)
             st.markdown(response)
             
+    # 儲存回應
     st.session_state.messages.append({"role": "assistant", "content": response})
