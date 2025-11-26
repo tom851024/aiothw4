@@ -31,3 +31,7 @@
 🔑 關鍵字 (Keywords)
 
 RAG, LangChain, Llama-3, Groq API, FAISS, Streamlit, Embedding Gemma, Python
+
+參考程式來源:
+https://github.com/yenlung/AI-Demo/blob/master/%E3%80%90Demo06a%E3%80%91RAG01_%E6%89%93%E9%80%A0%E5%90%91%E9%87%8F%E8%B3%87%E6%96%99%E5%BA%AB.ipynb
+https://github.com/yenlung/AI-Demo/blob/master/%E3%80%90Demo06b%E3%80%91RAG02_%E6%89%93%E9%80%A0_RAG_%E7%B3%BB%E7%B5%B1.ipynb
