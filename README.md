@@ -1,4 +1,4 @@
-🌍 國際新聞 AI 編譯助手 (International News RAG Agent)
+🌍 國際新聞 AI 閱讀助手 (International News RAG Agent)
 
 📑 專案摘要 (Abstract)
 
