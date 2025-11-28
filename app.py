@@ -12,8 +12,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from huggingface_hub import login
 
 # --- 1. 頁面設定 ---
-st.set_page_config(page_title="國際新聞 AI 編譯", page_icon="📰")
-st.title("📰 國際新聞 AI 編譯助手")
+st.set_page_config(page_title="國際新聞 AI 翻譯", page_icon="📰")
+st.title("📰 國際新聞 AI 翻譯助手")
 st.caption("使用 RAG 技術與 Embedding Gemma 模型")
 
 # --- 2. 處理 Secrets (金鑰) ---
