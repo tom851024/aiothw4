@@ -142,7 +142,19 @@ def chat_with_rag(user_input):
 
 # --- 6. 聊天介面 (UI) ---
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+    welcome_msg = """
+    你好！我是國際新聞 AI 翻譯助手。以下是目前的國際新聞重點摘要：
+
+    1. **俄羅斯空襲西烏克蘭**：造成至少 28 人死傷，救援行動持續進行中。
+    2. **美國停止生產一分硬幣**：因成本增加，五分硬幣可能成為下一個目標。
+    3. **防疫十項建議**：包括設立應急機構、定期演練、簡化結構及改善數據系統。
+    4. **戰火下的烏克蘭酒莊**：製造商努力在戰爭中保存傳統。
+    5. **《夏洛特的網》政治化爭議**：作者孫女對此表示批評。
+    6. **IISS 指控俄羅斯混合戰**：研究指出俄羅斯正進行破壞、間諜等行動以動搖歐洲穩定。
+
+    你可以針對以上新聞做更深入的提問，若資料庫中有相關報導，我將為你詳細解答！
+    """
+    st.session_state.messages = [{"role": "assistant", "content": welcome_msg}]
 
 # 顯示歷史訊息
 for message in st.session_state.messages:
